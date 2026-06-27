@@ -1,4 +1,14 @@
 ## GridX Infra
 
-Base infra setup for gridx project
+Contains the core infrastructure of the GridX - P2P energy trading platform
+
+### Bootstrapped services
+
+It currently bootstraps and runs the following services:
+
+| Service Name | Container Name | Internal Port | Host (External) Port | Protocol | Purpose |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Mosquitto** | `gridx-mqtt` | `1883` | `1883` | TCP / MQTT | Message broker handling real-time telemetry from the IoT Smart Meter Simulator. |
+| **Redis** | `gridx-redis` | `6379` | `6379` | TCP / RESP | In-memory event stream buffer and high-speed data store for system coordination. |
+
 
