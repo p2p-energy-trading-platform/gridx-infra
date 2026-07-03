@@ -10,5 +10,4 @@ It currently bootstraps and runs the following services:
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Mosquitto** | `gridx-mqtt` | `1883` | `1883` | TCP / MQTT | Message broker handling real-time telemetry from the IoT Smart Meter Simulator. |
 | **Redis** | `gridx-redis` | `6379` | `6379` | TCP / RESP | In-memory event stream buffer and high-speed data store for system coordination. |
-
-
+| **PostgreSQL** | `gridx-postgres` | `5432` | `5432` | TCP / SQL | Persistent relational database for storing energy transaction records and meter data. |
