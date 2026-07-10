@@ -6,6 +6,8 @@ services:
       - "1883:1883"
     volumes:
       - mosquitto_data:/mosquitto/data
+    networks:
+      - gridx-infra-network
 
   redis:
     image: redis:7-alpine
@@ -14,20 +16,63 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    networks:
+      - gridx-infra-network
 
   postgres:
     image: postgres:16-alpine
     container_name: gridx-postgres
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+    command: >
+      postgres
+      -c docker_env.AUTH_SERVICE_USER=${AUTH_SERVICE_USER}
+      -c docker_env.AUTH_SERVICE_PASSWORD=${AUTH_SERVICE_PASSWORD}
+      -c docker_env.ORDER_SERVICE_USER=${ORDER_SERVICE_USER}
+      -c docker_env.ORDER_SERVICE_PASSWORD=${ORDER_SERVICE_PASSWORD}
+      -c docker_env.BILLING_SERVICE_USER=${BILLING_SERVICE_USER}
+      -c docker_env.BILLING_SERVICE_PASSWORD=${BILLING_SERVICE_PASSWORD}
+      -c docker_env.NOTIFICATION_SERVICE_USER=${NOTIFICATION_SERVICE_USER}
+      -c docker_env.NOTIFICATION_SERVICE_PASSWORD=${NOTIFICATION_SERVICE_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts/postgres:/docker-entrypoint-initdb.d
+    networks:
+      - gridx-infra-network
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: gridx-timescaledb
+    ports:
+      - "${TIMESCALE_PORT:-5433}:5432"
+    environment:
+      POSTGRES_USER: ${TIMESCALE_USER}
+      POSTGRES_PASSWORD: ${TIMESCALE_PASSWORD}
+      POSTGRES_DB: ${TIMESCALE_DB}
+    command: >
+      postgres
+      -c docker_env.MARKET_TICKER_SERVICE_USER=${MARKET_TICKER_SERVICE_USER}
+      -c docker_env.MARKET_TICKER_SERVICE_PASSWORD=${MARKET_TICKER_SERVICE_PASSWORD}
+      -c docker_env.IOT_SERVICE_USER=${IOT_SERVICE_USER}
+      -c docker_env.IOT_SERVICE_PASSWORD=${IOT_SERVICE_PASSWORD}
+      -c docker_env.AI_SERVICE_USER=${AI_SERVICE_USER}
+      -c docker_env.AI_SERVICE_PASSWORD=${AI_SERVICE_PASSWORD}
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+      - ./init-scripts/timescaledb:/docker-entrypoint-initdb.d
+    networks:
+      - gridx-infra-network
 
 volumes:
   mosquitto_data:
   redis_data:
   postgres_data:
+  timescaledb_data:
+
+networks:
+  gridx-infra-network:
+    driver: bridge
