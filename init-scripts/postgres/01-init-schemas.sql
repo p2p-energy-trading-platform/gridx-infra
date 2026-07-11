@@ -1,16 +1,3 @@
--- 1. Create Service Users (Roles)
--- Note: In pure SQL scripts running inside these official images, we can reference 
--- the environment variables directly using the \getenv command.
-
-\getenv auth_user AUTH_SERVICE_USER
-\getenv auth_pass AUTH_SERVICE_PASSWORD
-\getenv order_user ORDER_SERVICE_USER
-\getenv order_pass ORDER_SERVICE_PASSWORD
-\getenv billing_user BILLING_SERVICE_USER
-\getenv billing_pass BILLING_SERVICE_PASSWORD
-\getenv notify_user NOTIFICATION_SERVICE_USER
-\getenv notify_pass NOTIFICATION_SERVICE_PASSWORD
-
 -- 1. Create Service Users (Roles) via Dynamic SQL
 DO $$
 BEGIN
@@ -31,12 +18,17 @@ END $$;
 
 -- 3. Revoke Global Public Privileges for Security Isolation
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
-REVOKE ALL ON DATABASE current_database() FROM PUBLIC;
+
+DO $$
+BEGIN
+    EXECUTE format('REVOKE ALL ON DATABASE %I FROM PUBLIC', current_database());
+END $$;
 
 -- 4. Grant Explicit Database Connectivity to the Microservices
 DO $$
 BEGIN
-    EXECUTE format('GRANT CONNECT ON DATABASE current_database() TO %I, %I, %I, %I', 
+    EXECUTE format('GRANT CONNECT ON DATABASE %I TO %I, %I, %I, %I', 
+        current_database(),
         sys_env('AUTH_SERVICE_USER'), 
         sys_env('ORDER_SERVICE_USER'), 
         sys_env('BILLING_SERVICE_USER'), 

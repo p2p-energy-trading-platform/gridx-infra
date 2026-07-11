@@ -18,12 +18,17 @@ END $$;
 
 -- 3. Revoke Global Public Privileges
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
-REVOKE ALL ON DATABASE current_database() FROM PUBLIC;
+
+DO $$
+BEGIN
+    EXECUTE format('REVOKE ALL ON DATABASE %I FROM PUBLIC', current_database());
+END $$;
 
 -- 4. Grant Explicit Database Connectivity
 DO $$
 BEGIN
-    EXECUTE format('GRANT CONNECT ON DATABASE current_database() TO %I, %I, %I', 
+    EXECUTE format('GRANT CONNECT ON DATABASE %I TO %I, %I, %I', 
+        current_database(),
         sys_env('MARKET_TICKER_SERVICE_USER'), 
         sys_env('IOT_SERVICE_USER'), 
         sys_env('AI_SERVICE_USER')
