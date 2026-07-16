@@ -1,0 +1,14 @@
+{
+  "name": "mqtt-dynamic-source",
+  "config": {
+    "connector.class": "io.lenses.streamreactor.connect.mqtt.source.MqttSourceConnector",
+    "tasks.max": "1",
+    "connect.mqtt.hosts": "tcp://gridx-mqtt:1883",
+    "connect.mqtt.client.id": "gridx_kafka_dynamic_bridge",
+    "connect.mqtt.service.quality": "1",
+    "connect.mqtt.kcql": "INSERT INTO gridx_telemetry__TOPIC SELECT * FROM gridx/devices/+/telemetry",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": "false"
+  }
+}
