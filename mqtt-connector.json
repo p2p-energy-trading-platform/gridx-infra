@@ -1,14 +1,17 @@
 {
   "name": "mqtt-dynamic-source",
   "config": {
-    "connector.class": "io.lenses.streamreactor.connect.mqtt.source.MqttSourceConnector",
+    "connector.class": "io.confluent.connect.mqtt.MqttSourceConnector",
     "tasks.max": "1",
-    "connect.mqtt.hosts": "tcp://gridx-mqtt:1883",
-    "connect.mqtt.client.id": "gridx_kafka_dynamic_bridge",
-    "connect.mqtt.service.quality": "1",
-    "connect.mqtt.kcql": "INSERT INTO gridx_telemetry__TOPIC SELECT * FROM gridx/devices/+/telemetry",
+    "mqtt.server.uri": "tcp://gridx-mqtt:1883",
+    "mqtt.client.id": "gridx_kafka_dynamic_bridge",
+    "mqtt.qos": "1",
+    "mqtt.topics": "gridx/devices/+/telemetry",
+    "kafka.topic": "gridx_telemetry_devices",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
     "value.converter": "org.apache.kafka.connect.json.JsonConverter",
-    "value.converter.schemas.enable": "false"
+    "value.converter.schemas.enable": "false",
+    "confluent.topic.bootstrap.servers": "gridx-kafka:29092",
+    "confluent.topic.replication.factor": "1"
   }
 }
