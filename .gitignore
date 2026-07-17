@@ -7,3 +7,6 @@ Thumbs.db
 
 # VS Code
 .vscode/
+
+plugins/kafka-connect-mqtt/*.jar
+plugins/kafka-connect-mqtt/*.json
