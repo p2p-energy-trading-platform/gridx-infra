@@ -9,8 +9,7 @@
     "mqtt.topics": "gridx/devices/+/telemetry",
     "kafka.topic": "gridx_telemetry_devices",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
-    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
-    "value.converter.schemas.enable": "false",
+    "value.converter": "org.apache.kafka.connect.converters.ByteArrayConverter",
     "confluent.topic.bootstrap.servers": "gridx-kafka:29092",
     "confluent.topic.replication.factor": "1"
   }
