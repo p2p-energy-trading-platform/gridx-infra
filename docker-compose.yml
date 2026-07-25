@@ -1,27 +1,32 @@
 services:
   mosquitto:
     image: eclipse-mosquitto:latest
-    container_name: gridx-mqtt
     ports:
       - "1883:1883"
     volumes:
       - mosquitto_data:/mosquitto/data
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
     networks:
       - gridx-infra-network
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
-    container_name: gridx-redis
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
       - gridx-infra-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
   postgres:
     image: postgres:16-alpine
-    container_name: gridx-postgres
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     environment:
@@ -40,13 +45,23 @@ services:
       -c docker_env.NOTIFICATION_SERVICE_PASSWORD=${NOTIFICATION_SERVICE_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init-scripts/postgres:/docker-entrypoint-initdb.d
+      - ./init-scripts/postgres:/docker-entrypoint-initdb.d:ro
     networks:
       - gridx-infra-network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
 
   timescaledb:
     image: timescale/timescaledb:latest-pg16
-    container_name: gridx-timescaledb
     ports:
       - "${TIMESCALE_PORT:-5433}:5432"
     environment:
@@ -63,27 +78,37 @@ services:
       -c docker_env.AI_SERVICE_PASSWORD=${AI_SERVICE_PASSWORD}
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
-      - ./init-scripts/timescaledb:/docker-entrypoint-initdb.d
+      - ./init-scripts/timescaledb:/docker-entrypoint-initdb.d:ro
     networks:
       - gridx-infra-network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
 
   kafka:
     image: confluentinc/cp-kafka:7.6.0
-    container_name: gridx-kafka
     ports:
       - "9092:9092"
     environment:
       KAFKA_NODE_ID: 1
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
-      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://gridx-kafka:29092,PLAINTEXT_HOST://localhost:9092'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'INTERNAL://kafka:29092,EXTERNAL://localhost:9092'
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_PROCESS_ROLES: 'broker,controller'
-      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@gridx-kafka:29093'
-      KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093,PLAINTEXT_HOST://0.0.0.0:9092'
-      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
+      KAFKA_LISTENERS: 'INTERNAL://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093,EXTERNAL://0.0.0.0:9092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'INTERNAL'
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
       KAFKA_LOG_DIRS: '/var/lib/kafka/data'
       CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
@@ -91,7 +116,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "kafka-topics --bootstrap-server gridx-kafka:29092 --list >/dev/null 2>&1"
+          "kafka-topics --bootstrap-server kafka:29092 --list >/dev/null 2>&1"
         ]
       interval: 10s
       timeout: 5s
@@ -101,18 +126,19 @@ services:
       - kafka_data:/var/lib/kafka/data
     networks:
       - gridx-infra-network
+    restart: unless-stopped
 
   kafka-connect:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: gridx-kafka-connect
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     ports:
       - "8083:8083"
     environment:
-      CONNECT_BOOTSTRAP_SERVERS: 'gridx-kafka:29092'
+      CONNECT_BOOTSTRAP_SERVERS: 'kafka:29092'
       CONNECT_REST_ADVERTISED_HOST_NAME: kafka-connect
       CONNECT_REST_PORT: 8083
       CONNECT_GROUP_ID: gridx-connect-group
@@ -128,6 +154,7 @@ services:
       CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components'
     networks:
       - gridx-infra-network
+    restart: unless-stopped
       
 volumes:
   mosquitto_data:   
@@ -139,8 +166,6 @@ volumes:
   timescaledb_data:
     driver: local
   kafka_data:
-    driver: local
-  connect_plugins:
     driver: local
 
 networks:
