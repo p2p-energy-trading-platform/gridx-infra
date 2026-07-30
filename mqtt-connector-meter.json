@@ -1,13 +1,13 @@
 {
-  "name": "mqtt-dynamic-source",
+  "name": "mqtt-meter-source",
   "config": {
     "connector.class": "io.confluent.connect.mqtt.MqttSourceConnector",
     "tasks.max": "1",
     "mqtt.server.uri": "tcp://gridx-mqtt:1883",
-    "mqtt.client.id": "gridx_kafka_dynamic_bridge",
+    "mqtt.client.id": "gridx_kafka_meter_bridge",
     "mqtt.qos": "1",
-    "mqtt.topics": "gridx/devices/+/telemetry",
-    "kafka.topic": "gridx_telemetry_devices",
+    "mqtt.topics": "gridx/+/+/meter",
+    "kafka.topic": "iot.meter-readings",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
     "value.converter": "org.apache.kafka.connect.converters.ByteArrayConverter",
     "confluent.topic.bootstrap.servers": "gridx-kafka:29092",
