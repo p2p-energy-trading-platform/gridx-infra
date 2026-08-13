@@ -18,7 +18,7 @@ wait_for_connect() {
   echo "[GridX] Waiting for kafka connect at ${KAFKA_CONNECT_URL}..."
 
   until curl -fsS "${KAFKA_CONNECT_URL}/connectors" >/dev/null 2>&1; do
-    if [ "$elapsed" -ge "CONNECT_TIMEOUT_SECONDS" ]; then
+    if [ "$elapsed" -ge "$CONNECT_TIMEOUT_SECONDS" ]; then
       echo "[GridX] Kafka connect did not become available with ${CONNECT_TIMEOUT_SECONDS} seconds.." >&2
       return 1
     fi
