@@ -4,6 +4,8 @@
 # Registers MQTT source connectors with the Kafka Connect REST API
 # Run this after docker compose up -d and Kafka Connect is healthy
 
+set -eu
+
 KAFKA_CONNECT_URL="${KAFKA_CONNECT_URL:-http://localhost:8083}"
 CONNECT_TIMEOUT_SECONDS="${CONNECT_TIMEOUT_SECONDS:-120}"
 
