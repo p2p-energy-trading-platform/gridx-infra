@@ -1,45 +1,65 @@
-#!/bin/bash
+#!/bin/sh
+
+set -eu
+
+KAFKA_CONNECT_URL="${KAFKA_CONNECT_URL:-http://localhost:8083}"
 
 echo "========================================"
 echo " GridX Infrastructure Health Check"
 echo "========================================"
 
-echo ""
-echo "[1/7] Docker Containers"
-sudo docker compose ps
+echo
+echo "[1/8] Docker containers"
+docker compose ps
 
-echo ""
-echo "[2/7] Redis"
-sudo docker exec gridx-infra-redis-1 redis-cli ping
+echo
+echo "[2/8] Redis"
+docker compose exec -T redis redis-cli ping
 
-echo ""
-echo "[3/7] PostgreSQL"
-sudo docker exec gridx-infra-postgres-1 pg_isready
+echo
+echo "[3/8] PostgreSQL"
+docker compose exec -T postgres \
+  pg_isready \
+  -U "${POSTGRES_USER:-gridx_master_user}" \
+  -d "${POSTGRES_DB:-gridx_db}"
 
-echo ""
-echo "[4/7] TimescaleDB"
-sudo docker exec gridx-infra-timescaledb-1 pg_isready
+echo
+echo "[4/8] TimescaleDB"
+docker compose exec -T timescaledb \
+  pg_isready \
+  -U "${TIMESCALE_USER:-gridx_timescale_master}" \
+  -d "${TIMESCALE_DB:-gridx_timescaledb}"
 
-echo ""
-echo "[5/7] Kafka Topics"
-sudo docker exec gridx-infra-kafka-1 \
+echo
+echo "[5/8] Kafka"
+docker compose exec -T kafka \
   kafka-topics \
-  --bootstrap-server localhost:9092 \
+  --bootstrap-server kafka:29092 \
   --list
 
-echo ""
-echo "[6/7] Kafka Connect"
-curl -s http://localhost:8083/
+echo
+echo "[6/8] Kafka Connect"
+curl --fail --silent --show-error "${KAFKA_CONNECT_URL}/"
 
-echo ""
-echo "[7/7] MQTT Broker"
-sudo docker exec gridx-infra-mosquitto-1 \
-  mosquitto_sub \
-  -h localhost \
-  -t '$SYS/broker/version' \
-  -C 1
+echo
+echo "[7/8] MQTT meter connector"
+curl \
+  --fail \
+  --silent \
+  --show-error \
+  "${KAFKA_CONNECT_URL}/connectors/mqtt-meter-source/status"
 
-echo ""
+echo
+echo
+echo "[8/8] MQTT heartbeat connector"
+curl \
+  --fail \
+  --silent \
+  --show-error \
+  "${KAFKA_CONNECT_URL}/connectors/mqtt-heartbeat-source/status"
+
+echo
+echo
 echo "========================================"
 echo " Infrastructure Check Complete"
 echo "========================================"
