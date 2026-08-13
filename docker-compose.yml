@@ -155,7 +155,22 @@ services:
     networks:
       - gridx-infra-network
     restart: unless-stopped
-      
+  connector-bootstrap:
+    image: curlimages/curl:8.10.1
+    depends_on:
+      kafka-connect:
+        condition: service_healthy
+    environment:
+      KAFKA_CONNECT_URL: http://kafka-connect:8083
+    volumes:
+      - ./:/workspace:ro
+    working_dir: /workspace
+    command:
+      - /bin/sh
+      - /workspace/scripts/register-connectors.sh
+    networks:
+      - gridx-infra-network
+    restart: "no"
 volumes:
   mosquitto_data:   
     driver: local            
