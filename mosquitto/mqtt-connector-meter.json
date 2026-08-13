@@ -3,14 +3,14 @@
   "config": {
     "connector.class": "io.confluent.connect.mqtt.MqttSourceConnector",
     "tasks.max": "1",
-    "mqtt.server.uri": "tcp://gridx-infra-mosquitto-1:1883",
-    "mqtt.client.id": "gridx_kafka_meter_bridge",
+    "mqtt.server.uri": "tcp://mosquitto:1883",
     "mqtt.qos": "1",
+    "mqtt.clean.session.enabled": "false",
     "mqtt.topics": "gridx/+/+/meter",
     "kafka.topic": "iot.meter-readings",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
     "value.converter": "org.apache.kafka.connect.converters.ByteArrayConverter",
-    "confluent.topic.bootstrap.servers": "gridx-infra-kafka-1:29092",
+    "confluent.topic.bootstrap.servers": "kafka:29092",
     "confluent.topic.replication.factor": "1"
   }
 }
