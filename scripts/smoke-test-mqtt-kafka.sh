@@ -2,6 +2,19 @@
 
 set -euo pipefail
 
+SCRIPT_DIRECTORY="$(
+  CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd
+)"
+
+INFRA_ROOT="$(dirname "$SCRIPT_DIRECTORY")"
+WORKSPACE_ROOT="$(dirname "$INFRA_ROOT")"
+ROOT_COMPOSE_FILE="${WORKSPACE_ROOT}/docker-compose.root.yml"
+
+COMPOSE=(
+  docker compose
+  -f "$ROOT_COMPOSE_FILE"
+)
+
 MQTT_TOPIC="gridx/smoke-test/device-1/meter"
 KAFKA_TOPIC="iot.meter-readings"
 TEST_ID="gridx-smoke-$(date +%s)"
@@ -22,7 +35,7 @@ trap cleanup EXIT
 
 echo "[GridX] Starting Kafka consumer..."
 
-docker compose exec -T kafka \
+"${COMPOSE[@]}" exec -T kafka \
   kafka-console-consumer \
   --bootstrap-server kafka:29092 \
   --topic "$KAFKA_TOPIC" \
@@ -37,7 +50,7 @@ sleep 3
 
 echo "[GridX] Publishing MQTT message to ${MQTT_TOPIC}..."
 
-docker compose exec -T mosquitto \
+"${COMPOSE[@]}" exec -T mosquitto \
   mosquitto_pub \
   -h localhost \
   -p 1883 \
