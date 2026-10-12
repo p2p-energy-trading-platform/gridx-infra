@@ -103,6 +103,46 @@ services:
       start_period: 10s
     restart: unless-stopped
 
+  minio:
+    image: quay.io/minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_API_CORS_ALLOW_ORIGIN: ${MINIO_CORS_ALLOW_ORIGIN:-http://localhost:3000}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - gridx-infra-network
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  minio-init:
+    image: quay.io/minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_AUTH_SERVICE_ACCESS_KEY: ${MINIO_AUTH_SERVICE_ACCESS_KEY:-}
+      MINIO_AUTH_SERVICE_SECRET_KEY: ${MINIO_AUTH_SERVICE_SECRET_KEY:-}
+    volumes:
+      - ./:/workspace:ro
+    working_dir: /workspace
+    entrypoint: ["/bin/sh", "/workspace/scripts/init-minio.sh"]
+    networks:
+      - gridx-infra-network
+    restart: "no"
+
   kafka:
     image: confluentinc/cp-kafka:7.7.0
     ports:
@@ -200,6 +240,8 @@ volumes:
   postgres_data:
     driver: local
   timescaledb_data:
+    driver: local
+  minio_data:
     driver: local
   kafka_data:
     driver: local
