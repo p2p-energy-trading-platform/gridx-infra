@@ -100,5 +100,15 @@ apply_connector \
   "mqtt-heartbeat-source" \
   "${REPOSITORY_ROOT}/mosquitto/mqtt-connector-heartbeat.json"
 
+apply_connector \
+  "mqtt-actuation-sink" \
+  "${REPOSITORY_ROOT}/mosquitto/mqtt-connector-sink.json"
+
+apply_connector \
+  "mqtt-actuation-source" \
+  "${REPOSITORY_ROOT}/mosquitto/mqtt-connector-actuation.json"
+
 wait_for_connector "mqtt-meter-source"
 wait_for_connector "mqtt-heartbeat-source"
+wait_for_connector "mqtt-actuation-sink"
+wait_for_connector "mqtt-actuation-source"
