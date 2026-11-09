@@ -11,6 +11,7 @@ It currently bootstraps and runs the following services:
 | **Mosquitto** | `gridx-mqtt` | `1883` | `1883` | TCP / MQTT | Message broker handling real-time telemetry from the IoT Smart Meter Simulator. |
 | **Kafka** | `gridx-kafka` | `9092` (external), `29092` (internal) | `9092` | TCP / Binary | High-throughput distributed event streaming platform for message orchestration across microservices. |
 | **Kafka Connect** | Compose service `kafka-connect` | `8083` | `8083` | HTTP | Runs and manages the MQTT source connectors. |
+| **Kafka UI** | UI view for kafka and kafka connect | `8080` | `8080` | HTTP | Shows dashboard view of kafka |
 | **Redis** | `gridx-redis` | `6379` | `6379` | TCP / RESP | In-memory event stream buffer and high-speed data store for system coordination. |
 | **PostgreSQL** | `gridx-postgres` | `5432` | `5432` | TCP / SQL | Persistent relational database storing isolated transactional schemas for Auth, Orders, Billing, and Notifications. |
 | **TimescaleDB** | `gridx-timescaledb` | `5432` | `5433` | TCP / SQL | Specialized time-series database optimized for storing large volumes of historical IoT metrics and market ticker data. |
