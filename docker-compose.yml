@@ -178,6 +178,19 @@ services:
       - gridx-infra-network
     restart: unless-stopped
 
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: 'gridx-cluster'
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: 'kafka:29092'
+      KAFKA_CLUSTERS_0_CONNECT_0_NAME: 'gridx-connect'
+      KAFKA_CLUSTERS_0_CONNECT_0_ADDRESS: 'http://kafka-connect:8083'
+    networks:
+      - gridx-infra-network
+    restart: unless-stopped
+
   kafka-connect:
     build:
       context: .
