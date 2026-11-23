@@ -1,0 +1,63 @@
+groups:
+  - name: gridx-infrastructure
+    rules:
+      - alert: MonitoringTargetDown
+        expr: up{job=~"postgres|timescaledb|redis|kafka|kafka-connect|mosquitto|minio"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "GridX monitoring target is unavailable"
+          description: 'Prometheus cannot scrape {{ $labels.job }} at {{ $labels.instance }}.'
+
+      - alert: PostgreSQLUnavailable
+        expr: pg_up{job=~"postgres|timescaledb"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL database connection failed"
+          description: 'The database monitored by {{ $labels.job }} is unavailable.'
+
+      - alert: RedisUnavailable
+        expr: redis_up{job="redis"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is unavailable"
+          description: "The Redis exporter cannot connect to the Redis server."
+
+      - alert: MinIOClusterUnhealthy
+        expr: minio_cluster_health_status{job="minio"} < 1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MinIO cluster health is degraded"
+          description: "MinIO reports an unhealthy cluster status."
+
+      - alert: MinIODriveOffline
+        expr: minio_cluster_drive_offline_total{job="minio"} > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MinIO has offline drives"
+          description: "One or more MinIO drives are offline."
+
+      - alert: MinIOCapacityLow
+        expr: |
+          (
+            minio_cluster_capacity_usable_free_bytes{job="minio"}
+            /
+            minio_cluster_capacity_usable_total_bytes{job="minio"}
+          ) < 0.15
+          and
+          minio_cluster_capacity_usable_total_bytes{job="minio"} > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MinIO usable storage capacity is running low"
+          description: "Less than 15% of usable MinIO storage capacity remains."
