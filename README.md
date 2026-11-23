@@ -17,6 +17,68 @@ It currently bootstraps and runs the following services:
 | **TimescaleDB** | `gridx-timescaledb` | `5432` | `5433` | TCP / SQL | Specialized time-series database optimized for storing large volumes of historical IoT metrics and market ticker data. |
 | **MinIO** | `girdx-minio` | `9000` (S3 API), `9001` (Console) | `9000` (S3 API), `9001` (Console) | HTTP / S3-compatible API | Object storage for uploaded files, documents, reports, and exports, with persistent data stored in a Docker named volume. |
 
+## Monitoring and observability
+
+GridX uses **Prometheus** for infrastructure metrics collection and
+**Grafana** for monitoring dashboards. Both services run through Docker
+Compose and communicate with infrastructure services over the internal
+Docker network.
+
+### Accessing monitoring
+
+When running locally, the monitoring interfaces are available at:
+
+| Service | URL | Purpose |
+|---|---|---|
+| Prometheus | http://localhost:9090 | Metrics collection and querying |
+| Prometheus Targets | http://localhost:9090/targets | Scrape target health |
+| Prometheus Alerts | http://localhost:9090/alerts | Alert rule status |
+| Grafana | http://localhost:3001 | Monitoring dashboards |
+
+Grafana credentials are configured through `GRAFANA_ADMIN_USER` and
+`GRAFANA_ADMIN_PASSWORD` in the environment configuration.
+
+### Monitored infrastructure
+
+Prometheus collects metrics from the following infrastructure components:
+
+- **PostgreSQL and TimescaleDB** — database metrics through PostgreSQL exporters.
+- **Redis** — cache and datastore metrics through the Redis exporter.
+- **Kafka and Kafka Connect** — JVM metrics through JMX exporters.
+- **Mosquitto** — MQTT broker metrics through the Mosquitto exporter.
+- **MinIO** — object storage metrics through its native Prometheus endpoint.
+
+### Grafana dashboards
+
+Four provisioned dashboards provide visibility across the infrastructure:
+
+| Dashboard | Coverage |
+|---|---|
+| Infrastructure Overview | Overall infrastructure health |
+| Databases and Cache | PostgreSQL, TimescaleDB, and Redis |
+| Messaging and IoT | Kafka, Kafka Connect, and Mosquitto |
+| Object Storage | MinIO storage health and capacity |
+
+The dashboards contain **48 monitoring panels** in total.
+
+### Prometheus alert rules
+
+Six alert rules are configured to detect infrastructure availability
+and storage-related conditions:
+
+- `MonitoringTargetDown`
+- `PostgreSQLUnavailable`
+- `RedisUnavailable`
+- `MinIOClusterUnhealthy`
+- `MinIODriveOffline`
+- `MinIOCapacityLow`
+
+Prometheus evaluates these rules. Alertmanager and external notification
+delivery are not currently configured.
+
+For detailed configuration, validation commands, and operational notes,
+see the [Monitoring Documentation](monitoring/README.md).
+
 ## Starting the infrastructure
 
 Start all infrastructure services and initialize both MQTT source connectors.
