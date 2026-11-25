@@ -9,7 +9,7 @@ GridX uses Prometheus for metrics collection and Grafana for visualization. Moni
 | Prometheus | http://localhost:9090 |
 | Targets | http://localhost:9090/targets |
 | Alerts | http://localhost:9090/alerts |
-| Grafana | http://localhost:3001 |
+| Grafana | http://localhost:3002 |
 
 ## Monitored services
 | Service | Integration | Endpoint |
@@ -69,10 +69,10 @@ docker compose exec -T prometheus promtool check rules /etc/prometheus/alerts/in
 
 ### Grafana health
 ```bash
-curl -fsS http://localhost:3001/api/health
+curl -fsS http://localhost:3002/api/health
 ```
 
-Check Prometheus targets at http://localhost:9090/targets and dashboards at http://localhost:3001.
+Check Prometheus targets at http://localhost:9090/targets and dashboards at http://localhost:3002.
 
 ## Persistence and operational notes
 - Prometheus data is stored in `prometheus_data`.

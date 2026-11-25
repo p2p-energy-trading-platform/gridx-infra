@@ -33,7 +33,7 @@ When running locally, the monitoring interfaces are available at:
 | Prometheus | http://localhost:9090 | Metrics collection and querying |
 | Prometheus Targets | http://localhost:9090/targets | Scrape target health |
 | Prometheus Alerts | http://localhost:9090/alerts | Alert rule status |
-| Grafana | http://localhost:3001 | Monitoring dashboards |
+| Grafana | http://localhost:3002 | Monitoring dashboards |
 
 Grafana credentials are configured through `GRAFANA_ADMIN_USER` and
 `GRAFANA_ADMIN_PASSWORD` in the environment configuration.
