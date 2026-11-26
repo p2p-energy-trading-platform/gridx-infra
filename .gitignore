@@ -11,3 +11,4 @@ Thumbs.db
 plugins/kafka-connect-mqtt/*.jar
 plugins/kafka-connect-mqtt/*.json
 plugins/
+/monitoring/prometheus/minio-token

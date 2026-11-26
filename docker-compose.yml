@@ -20,6 +20,19 @@ services:
       retries: 12
       start_period: 5s
 
+  mosquitto-exporter:
+    image: ghcr.io/d0ugal/mosquitto-exporter@sha256:b26947e95ae0d002dfc77c3332832fc4883fa8781476597e9dbf02f75fd031e7
+    environment:
+      MOSQUITTO_BROKER_ENDPOINT: tcp://mosquitto:1883
+      LOG_LEVEL: info
+      LOG_FORMAT: json
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+    networks:
+      - gridx-infra-network
+    restart: unless-stopped
+
   redis:
     image: redis:7-alpine
     ports:
@@ -144,7 +157,10 @@ services:
     restart: "no"
 
   kafka:
-    image: confluentinc/cp-kafka:7.7.0
+    image: gridx-kafka-jmx:7.7.0
+    build:
+      context: .
+      dockerfile: kafka/Dockerfile
     ports:
       - "9092:9092"
     environment:
@@ -161,12 +177,13 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: 'INTERNAL'
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
       KAFKA_LOG_DIRS: '/var/lib/kafka/data'
-      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qg'
+      KAFKA_OPTS: "-javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent-1.7.0.jar=9404:/etc/kafka/jmx-exporter-config.yml"
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "kafka-topics --bootstrap-server kafka:29092 --list >/dev/null 2>&1"
+          "env -u KAFKA_OPTS kafka-topics --bootstrap-server kafka:29092 --list >/dev/null 2>&1"
         ]
       interval: 10s
       timeout: 5s
@@ -216,6 +233,7 @@ services:
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
       CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components'
+      KAFKA_OPTS: "-javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent-1.7.0.jar=9405:/etc/kafka-connect/jmx-exporter-config.yml"
     networks:
       - gridx-infra-network
     healthcheck:
@@ -245,6 +263,81 @@ services:
     networks:
       - gridx-infra-network
     restart: "no"
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.21.1
+    environment:
+      DATA_SOURCE_URI: postgres:5432/gridx_db?sslmode=disable
+      DATA_SOURCE_USER: postgres_exporter
+      DATA_SOURCE_PASS: ${POSTGRES_EXPORTER_PASSWORD:?Set POSTGRES_EXPORTER_PASSWORD in .env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - gridx-infra-network
+    restart: unless-stopped
+
+  timescale-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.21.1
+    environment:
+      DATA_SOURCE_URI: timescaledb:5432/gridx_tsdb?sslmode=disable
+      DATA_SOURCE_USER: timescale_exporter
+      DATA_SOURCE_PASS: ${TIMESCALE_EXPORTER_PASSWORD:?Set TIMESCALE_EXPORTER_PASSWORD in .env}
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    networks:
+      - gridx-infra-network
+    restart: unless-stopped
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.80.1
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - gridx-infra-network
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.16.0
+    ports:
+      - "127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/alerts:/etc/prometheus/alerts:ro
+      - ./monitoring/prometheus/minio-token:/etc/prometheus/minio-token:ro
+      - prometheus_data:/prometheus
+    networks:
+      - gridx-infra-network
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:13.3.1
+    depends_on:
+      prometheus:
+        condition: service_started
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3002}:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - gridx-infra-network
+    restart: unless-stopped
+
 volumes:
   mosquitto_data:   
     driver: local            
@@ -257,6 +350,11 @@ volumes:
   minio_data:
     driver: local
   kafka_data:
+    driver: local
+
+  prometheus_data:
+    driver: local
+  grafana_data:
     driver: local
 
 networks:
